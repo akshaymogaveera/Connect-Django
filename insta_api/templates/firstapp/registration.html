@@ -1,0 +1,69 @@
+
+
+<!DOCTYPE html>
+<html>
+{% load static %}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instapic</title>
+
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/ionicons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Login-Form-Clean-1.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Login-Form-Clean.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+
+
+</head>
+
+<body>
+
+
+
+
+
+
+    <div class="login-clean">
+        {% if registered %}
+        <h1>Thank you for registering!</h1>
+      {% else %}
+        <h1 align="center">Register Here</h1>
+        <h3 align="center">Just fill out the form.</h3>
+
+        <form enctype="multipart/form-data" method="POST">
+          {% csrf_token %}
+          {{ user_form.as_p }}
+          {{ profile_form.as_p }}
+          <input type="submit" name="" value="Register">
+        </form>
+
+      {% endif %}
+
+    </div>
+    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/myjs.js' %}"></script>
+    <script>
+    $("#id_username").change(function () {
+      var username = $(this).val();
+
+      $.ajax({
+        url: "{% url 'firstapp:validate_username' %}",
+        data: {
+          'username': username
+        },
+        dataType: 'json',
+        success: function (data) {
+          if (data.is_taken) {
+            alert("A user with this username already exists.");
+          }
+        }
+      });
+
+    });
+  </script>
+</body>
+
+</html>

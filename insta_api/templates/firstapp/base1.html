@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instapic</title>
+
+     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/ionicons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Login-Form-Clean-1.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Login-Form-Clean.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/myjs.js' %}"></script>
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+    <div class="overlay"></div>
+    <div class="container-fluid header-top">
+        <div class="col-md-12" style="padding:0px;">
+
+
+
+
+            <div class="top-menu-logo"><img src="{% static 'images/logo.jpg' %}" class="left-block" style="height:40px;margin-top:10px;margin-bottom:10px;">
+
+
+
+                <div  class="menu-buttons"  class="center-block">
+<a href="{% url 'logout'  %}" class="btn btn-default" type="button" id="upload-but"><i class="glyphicon glyphicon-log-out"></i></a>
+<a href="{% url 'firstapp:news_feed'  %}" class="btn btn-default" type="button" id="upload-but"><i class="glyphicon glyphicon-home"></i></a>
+			<a href="{% url 'firstapp:friend_req_list'  %}" class="btn btn-default" type="button" id="upload-but"><i class="glyphicon glyphicon-bell"></i></a>
+                    <a href="{% url 'firstapp:post_new'  %}" class="btn btn-default" type="button" id="upload-but"><i class="glyphicon glyphicon-upload"></i></a>
+                    <a href="{% url 'firstapp:profile' usrname=user.username %}" class="btn btn-default" type="button" id="profile-but"><i class="glyphicon glyphicon-user"></i></a>
+              <form  class="btn" method="POST" action="{% url 'firstapp:search'  %}" style="margin:auto;max-width:100px" disabled>
+{% csrf_token %}
+  <input  type="text" placeholder="Enter Username.." name="username" required>
+  <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+</form>
+
+
+
+
+ </div>
+</div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    {% block body_block %}
+      {% endblock %}
+
+
+    </div>
+
+</body>
+
+</html>

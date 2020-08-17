@@ -1,0 +1,22 @@
+{% extends "firstapp/base.html" %}
+{% block body_block %}
+
+{% for user in userinfo %}
+<h1>{{ user.user.first_name }} {{ user.user.last_name }}</h1>
+
+<img src ="/media/{{ user.profile_pic}}">
+
+
+<h1>UserName: {{ user.user.username }}</h1>
+<h1>Email: {{ user.user.email }}</h1>
+
+<h1>City:  {{user.city }}</h1>
+<h1>State:  {{user.state }}</h1>
+<h1>Country:  {{user.country }}</h1>
+<h1>School:  {{user.school }}</h1>
+<h1>College:  {{user.college }}</h1>
+<h1>Sex:  {{user.sex }}</h1>
+
+{% endfor %}
+
+{% endblock %}

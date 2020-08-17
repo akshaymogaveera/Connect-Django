@@ -1,0 +1,13 @@
+{% extends "firstapp/base1.html" %}
+
+{% block body_block %}
+<div class="container img-container">
+<form method="POST">
+    {% csrf_token %}
+    <p>Are you sure you want to delete {{object}}?</p>
+    <input type="submit" class='btn btn-danger' value="Confirm">
+
+</form>
+</div>
+
+{% endblock %}

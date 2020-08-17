@@ -1,0 +1,23 @@
+{% extends "firstapp/base1.html" %}
+
+{% block body_block %}
+<div class="container img-container">
+<h1> New Post </h1>
+
+<form class="post-form" enctype="multipart/form-data" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class='save btn btn-default' name="button">Save</button>
+
+</form>
+
+<script>
+
+    var editor=new MediumEditor('.editable');
+
+</script>
+
+
+</div>
+
+{% endblock %}

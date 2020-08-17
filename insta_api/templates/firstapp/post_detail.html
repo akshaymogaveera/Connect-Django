@@ -1,0 +1,86 @@
+
+
+
+{% extends "firstapp/base.html" %}
+
+{% block body_block %}
+
+
+<h1 class ="posttitle loader">{{post.title}}</h1>
+
+
+<div class="date postdate">
+    {{ post.created_date }}
+
+</div>
+
+
+<p class="postcontent">{{ post.text|safe|linebreaks }}</p>
+
+{% if post.author.id == user.id %}
+
+<a class="btn btn-primary" href="{% url 'firstapp:post_edit' pk=post.pk %}"><span class="glyphicon glyphicon-pencil"></span></a>
+<a class="btn btn-primary" href="{% url 'firstapp:post_remove' pk=post.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+
+{% endif %}
+
+<hr>
+<a class="btn btn-primary btn-comment" href="{% url 'firstapp:add_comment_to_post' pk=post.pk%}">Add Comment</a>
+
+<div class="container">
+    {% for comment in post.comments.all %}
+
+    <br>
+
+
+    {% if  comment.approved_comment %}
+
+    {% if post.author.id == user.id %}
+
+
+    <a class="btn btn-default" href="{% url 'firstapp:comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+
+
+    {% endif %}
+
+    {{comment.created_date }}
+    <p>{{comment.text|safe|linebreaks}}</p>
+    <p>Posted By : {{comment.author}}</p>
+
+    {% else %}
+
+    {% if post.author.id == user.id %}
+
+    <a class="btn btn-default" href="{% url 'firstapp:comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+    <a class="btn btn-primary" href="{% url 'firstapp:comment_approve' pk=comment.pk %}"><span class="glyphicon glyphicon-ok"></span></a>
+    {{comment.created_date }}
+    <p>{{comment.text|safe|linebreaks}}</p>
+    <p>Posted By : {{comment.author}}</p>
+
+    {% endif %}
+
+
+
+
+    {% endif %}
+    {% empty %}
+
+    <p>No comments</p>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

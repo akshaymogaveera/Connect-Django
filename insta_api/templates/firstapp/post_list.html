@@ -1,0 +1,16 @@
+{% extends "firstapp/base.html" %}
+{% block body_block %}
+
+<a href="{% url 'firstapp:post_new'  %}"><h1>Create Post</h1></a>
+<div class="list-group">
+{%for post in post_list %}
+<div class="list-group-item">
+
+<h1><a  href="{% url 'firstapp:post_detail' pk=post.pk %}">{{post.title}}</a></h1>
+<a class="btn btn-primary" href="{% url 'firstapp:post_edit' pk=post.pk %}"><span class="glyphicon glyphicon-pencil"></span></a>
+<a class="btn btn-primary" href="{% url 'firstapp:post_remove' pk=post.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+<h1><a class="btn btn-default" href="{% url 'firstapp:add_comment_to_post' pk=post.pk %}">Add comment</a></h1>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

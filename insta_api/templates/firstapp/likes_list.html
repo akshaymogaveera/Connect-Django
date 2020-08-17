@@ -1,0 +1,45 @@
+{% extends "firstapp/base1.html" %}
+{% block body_block %}
+{% load static %}
+ <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+ <style>
+ .img-container {
+  margin-top:10px;
+  width:600px;
+  position:relative;
+  padding-left:0px;
+  padding-right:200px;
+}
+.list-group-item img {
+  width:73px;
+  height:95px;
+
+  margin-bottom:10px;
+
+}
+</style>
+
+
+
+<div class="centerstage list-group ">
+    {% for like in likes_list %}
+<div class="container img-container">
+     <div class="list-group-item jumbotron">
+
+
+    <a  href="{% url 'firstapp:profile' usrname=like.person.username %}">
+
+            <img class="img-circle" src ="/media/{{ like.person.userprofileinfo.profile_pic}}">
+               <label>{{like.person.first_name}} {{i.person.last_name}}</label>
+                </div></a>
+
+    {% endfor%}
+
+</div>
+
+
+</div>
+
+
+
+{% endblock %}

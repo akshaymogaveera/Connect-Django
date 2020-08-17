@@ -1,0 +1,286 @@
+{% extends "firstapp/base1.html" %}
+{% block body_block %}
+{% load static %}
+<script type="text/javascript" src="{% static 'js/jquery.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/myjs.js' %}"></script>
+<script>
+function addfriend(x,id) {
+ if ($("#"+id+"add").hasClass("glyphicon glyphicon-plus")){
+     console.log("add friend");
+     $("#"+id+"af").after('<h3><span class="glyphicon glyphicon-ok"></span><text > Pending Request</text></h3>');
+
+     $("#"+id+"af").remove();
+
+    $.ajax({
+                url: "{% url 'firstapp:add_friend' pk=1234 %}".replace(/1234/,id.toString()),
+                type:'GET',
+                dataType: 'json'
+                });
+
+
+ }
+}
+
+
+function deletefriend(x,id){
+    if ($("#"+id+"remove").hasClass("glyphicon glyphicon-remove")){
+     console.log("delete friend");
+     $("#"+id+"df").after('<a class="btn btn-default" id='+id+'af  onclick="addfriend(this,'+id+')" ><span id="'+id+'add" class="glyphicon glyphicon-plus"></span><text id="'+id+'textadd"> Add Friend</text></a>');
+        $("#"+id+"friends").remove();
+     $("#"+id+"df").remove();
+     $("#"+id+"count").remove();
+
+
+     $.ajax({
+                url: "{% url 'firstapp:delete_friend' pk=1234 %}".replace(/1234/,id.toString()),
+                type:'GET',
+                dataType: 'json'
+
+
+                });
+
+
+ }
+
+}
+
+function acceptfriend(x,id){
+    if ($("#"+id+"accept").hasClass("glyphicon glyphicon-ok-circle")){
+     console.log("accept friend");
+     $("#"+id+"addfriendsign").append('<span id='+id+'friends class="glyphicon glyphicon-ok-sign fa-0.1x"></span>')
+     $("#"+id+"apf").after('<a class="btn btn-default"  id='+id+'df onclick="deletefriend(this,'+id+')"><span id="'+id+'remove" class="glyphicon glyphicon-remove"></span><text id="'+id+'textremove"> Delete Friend</text></a> <a id="'+id+'count" class="btn btn-default btn-primary follow-button" type="button" href="{% url "firstapp:friend_list" pk=user_profile.pk %}">{{friends_other_count}} Friends </a>');
+
+     $("#"+id+"apf").remove();
+
+     $.ajax({
+                url: "{% url 'firstapp:accept_friend' pk=1234 %}".replace(/1234/,id.toString()),
+                type:'GET',
+                dataType: 'json'
+
+                });
+
+
+ }
+
+}
+
+</script>
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+
+
+
+
+    <div class="container"><img class="img-circle center-block" src ="/media/{{ userinfo.profile_pic}}" width="140" height="140">
+        <h1 class="text-center">
+        <div class="container">
+        {% if user.id != user_profile.id %}
+
+          {% if friends_info %}
+            {% if friends_info.friend_status == 2 %}
+
+
+
+
+               <label>{{ user_profile.first_name }} {{ user_profile.last_name }} <span id="{{user_profile.id}}friends" class="glyphicon glyphicon-ok-sign fa-0.1x"></span></label>
+
+<br>
+        <a class="btn btn-default"  id="{{user_profile.id}}df" onclick="deletefriend(this,'{{user_profile.id}}')"><span id="{{user_profile.id}}remove" class="glyphicon glyphicon-remove"></span><text id="{{user_profile.id}}textremove"> Delete Friend</text></a>
+
+         <a id="{{user_profile.id}}count" class="btn btn-default btn-primary follow-button" type="button" href="{% url 'firstapp:friend_list' pk=user_profile.pk %}">{{friends_other_count}} Friends </a>
+
+
+               {% elif friends_info.friend_status == 1 %}
+
+                <label>{{ user_profile.first_name }} {{ user_profile.last_name }} </label>
+
+<br>
+               <h3><span  class="glyphicon glyphicon-ok"></span><text > Pending Request</text></h3>
+               {% elif friends_info.friend_status == 0 %}
+
+               <label>{{ user_profile.first_name }} {{ user_profile.last_name }} </label>
+
+<br>
+
+              <a class="btn btn-default" id="{{user_profile.id}}af"  onclick="addfriend(this,'{{user_profile.id}}')" ><span id="{{user_profile.id}}add" class="glyphicon glyphicon-plus"></span><text id="{user_profile.id}}textadd"> Add Friend</text></a>
+
+            {% endif %}
+
+          {% else %}
+
+          {% if friend_request.friend_status == 1 %}
+
+<label id="{{user_profile.id}}addfriendsign">{{ user_profile.first_name }} {{ user_profile.last_name }}</label>
+
+<br>
+        <a class="btn btn-default" id="{{user_profile.id}}apf" onclick="acceptfriend(this,'{{user_profile.id}}')" ><span id="{{user_profile.id}}accept" class="glyphicon glyphicon-ok-circle"></span><text id="{{user_profile.id}}textaccept"> Accept Request</text></a>
+
+         {% else %}
+
+         <label>{{ user_profile.first_name }} {{ user_profile.last_name }} </label>
+
+<br>
+
+              <a class="btn btn-default" id="{{user_profile.id}}af"  onclick="addfriend(this,'{{user_profile.id}}')" ><span id="{{user_profile.id}}add" class="glyphicon glyphicon-plus"></span><text id="{user_profile.id}}textadd"> Add Friend</text></a>
+
+
+           {% endif %}
+
+          {% endif %}
+
+
+           {% else %}
+           <label>{{ user_profile.first_name }} {{ user_profile.last_name }} </label>
+
+<br>
+
+           <a class="btn btn-default btn-primary follow-button" type="button" href="{% url 'firstapp:friend_list' pk=user.pk %}">{{friends_count}} Friends </a>
+
+        {% endif %}
+        <div class="col-md-12 profile-imgs">
+            </div>
+        </div>
+    </div>
+            <div>
+
+{% if posts %}
+                {%for p in posts %}
+<div class="container img-container">
+
+        <div id="upload-div"></div>
+        <div class="img-div">
+            <div class="header"><img class="img-circle" src ="/media/{{ p.author.userprofileinfo.profile_pic}}">
+            <label>{{p.author}}</label>
+            </div>{% if p.post_pics %}
+            <img src ="/media/{{ p.post_pics}}">
+            {% endif %}
+
+
+
+
+
+
+
+
+
+            {% if p.author.id == user.id %}
+
+                <a class="btn btn-primary" href="{% url 'firstapp:post_edit' pk=p.pk %}"><span class="glyphicon glyphicon-pencil"></span></a>
+                <a class="btn btn-primary" href="{% url 'firstapp:post_remove' pk=p.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+
+            {% endif %}
+
+            <hr>
+             <p><strong><a  href="{% url 'firstapp:profile' usrname=p.author %}"> {{ p.author }}</a></strong>  {{p.text}}</p>
+            <div class="header"><a href="#"  ><i class="fa fa-heart-o"></i></a><a href="{% url 'firstapp:add_comment_to_post' pk=p.pk%}"><i class="fa fa-comment-o"></i></a></div>
+
+
+
+    {% for comment in p.comments.all %}
+ <div class="container">
+    <br>
+
+
+    {% if  comment.approved_comment %}
+
+    {% if p.author.id == user.id %}
+
+
+    <a class="btn btn-default" href="{% url 'firstapp:comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+
+
+    {% endif %}
+            <div class="more-section">
+
+                <p><strong>{{comment.author}} </strong>{{comment.text|safe|linebreaks}}</p>
+            </div>
+        </div>
+
+
+    {% else %}
+
+    {% if p.author.id == user.id %}
+
+    <a class="btn btn-default" href="{% url 'firstapp:comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+    <a class="btn btn-primary" href="{% url 'firstapp:comment_approve' pk=comment.pk %}"><span class="glyphicon glyphicon-ok"></span></a>
+
+
+
+            <div class="more-section">
+
+                <p><strong>{{comment.author}} </strong>{{comment.text|safe|linebreaks}}</p>
+            </div>
+        </div>
+
+
+    {% endif %}
+
+
+
+
+    {% endif %}
+    {% empty %}
+
+    <p>No comments</p>
+    {% endfor %}
+
+</div>
+
+
+
+
+
+        {% endfor %}
+        {% else %}
+<hr>
+<h1 class="text-center">No Posts</h1>
+{% endif %}
+        </div>
+
+
+
+</div>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
