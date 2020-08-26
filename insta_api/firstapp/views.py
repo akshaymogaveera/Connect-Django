@@ -202,12 +202,16 @@ class UserFeed(APIView):
 
                 if status:
                     self.serializer = PostGetSerializer(
-                        Post.objects.filter(author=requested_user.id).order_by('created_date'),
+                        Post.objects.filter(author=requested_user.id).order_by('-created_date'),
                         many=True)
                     if requested_user.id == request.user.id:
                         self.self = True
 
-                    return JsonResponse({'userfeed': self.serializer.data, 'self': self.self}, status=200)
+
+                    return Response(self.serializer.data)
+
+                    #return JsonResponse({'userfeed': self.serializer.data, 'self': self.self}, status=200)
+
                 else:
                     return JsonResponse({"error": "Invalid ID passed"}, status=400)
             else:
@@ -402,6 +406,20 @@ class Friend(APIView):
             return JsonResponse({"error": str(e)}, status=400)
 
 
+class FriendCount(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        try:
+            FriendsCount = Friends.objects.filter(user1=self.request.user,friend_status=2).count()
+
+            return JsonResponse({"count": FriendsCount}, status=200)
+
+
+        except Exception as e:
+            print(e.with_traceback())
+            return JsonResponse({"count": "error"}, status=400)
+
 class Posts(APIView):
     permission_classes = (IsAuthenticated,)
     parser_classes = (MultiPartParser,)
@@ -499,14 +517,17 @@ class Posts(APIView):
 
                     self.myResponse = {"createpost": createpost.data}
                 else:
+                    print(createpost.errors)
                     self.myResponse = {"createpost_error": createpost.errors}
 
                 return JsonResponse(self.myResponse)
 
             else:
+                print(validator[1])
                 return JsonResponse({"error": validator[1]}, status=400)
 
         except Exception as e:
+            print(e.with_traceback())
             return JsonResponse({"user_error": str(e)}, status=400)
 
 
@@ -597,6 +618,20 @@ class Like(APIView):
         except Exception as e:
             return JsonResponse({"user_error": str(e)}, status=400)
 
+
+class PostCount(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        try:
+            PostCount = Post.objects.filter(author=self.request.user).count()
+
+            return JsonResponse({"count": PostCount}, status=200)
+
+
+        except Exception as e:
+            print(e.with_traceback())
+            return JsonResponse({"count": "error"}, status=400)
 
 class PostLikesCount(APIView):
     permission_classes = (IsAuthenticated,)
