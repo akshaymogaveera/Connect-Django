@@ -299,3 +299,20 @@ class RegisterUpdateValidate(PayloadValidator):
 
     def validateProfilePic(self, val, **kwargs):
         return True
+
+class SearchValidate(PayloadValidator):
+    strict = True
+    input = datatypes.Function('validateInput')
+
+    def validateInput(self, val, payload, errors, **kwargs):
+        if not val.replace(" ", "").isalpha():
+            errors.append("Input should be Alphabets")
+            return False
+        elif len(val) < 3:
+            errors.append("Input length should be more than 3")
+            return False
+        elif len(val) > 25:
+            errors.append("Input length should be less than 25")
+            return False
+        else:
+            return True

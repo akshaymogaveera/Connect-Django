@@ -23,6 +23,7 @@ urlpatterns = [
     path('friend/edit/', views.Friend.as_view(), name='friend'),
     path('friend/mutual/', views.MutualFriendsList.as_view(), name='mutualfriend'),
     path('friend/count/', views.FriendCount.as_view(), name='PostCount'),
+    path('friend/status/', views.FriendStatus.as_view(), name='FriendStatus'),
     path('register/', views.Register.as_view(), name='FriendCount'),
     path('post/', views.Posts.as_view(), name='post'),
     path('register/update/', views.RegisterUpdate.as_view(), name='registerupdate'),
@@ -34,6 +35,10 @@ urlpatterns = [
     path('post/likes/count/', views.PostLikesCount.as_view(), name='postlikescount'),
     path('post/liked/', views.getLiked.as_view(), name='getLiked'),
     path('post/count/', views.PostCount.as_view(), name='PostCount'),
+    path('post/delete/', views.PostDelete.as_view(), name='PostDelete'),
+    path('post/latest/like/', views.LatestLikeOfPost.as_view(), name='LatestLikeOfPost'),
+    path('post/latest/comments/', views.LatestCommentsOfPost.as_view(), name='LatestCommentsOfPost'),
+    path('search/', views.Search.as_view(), name='Search'),
 
 
 

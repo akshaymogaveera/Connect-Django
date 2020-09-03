@@ -158,6 +158,7 @@ class UserMainInfo(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
+
 class UserGetProfilePic(APIView):
     # permission_classes = (IsAuthenticated,)
 
@@ -175,7 +176,6 @@ class UserGetProfilePic(APIView):
 
                     self.serializer = UserGetProfilePicSerializer(UserProfileInfo.objects.get(user=requested_user))
 
-
                     return Response(self.serializer.data, status=200)
                 else:
                     return JsonResponse({"error": "Invalid ID passed"})
@@ -185,6 +185,7 @@ class UserGetProfilePic(APIView):
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
+
 
 class UserFeed(APIView):
     # permission_classes = (IsAuthenticated,)
@@ -207,10 +208,9 @@ class UserFeed(APIView):
                     if requested_user.id == request.user.id:
                         self.self = True
 
-
                     return Response(self.serializer.data)
 
-                    #return JsonResponse({'userfeed': self.serializer.data, 'self': self.self}, status=200)
+                    # return JsonResponse({'userfeed': self.serializer.data, 'self': self.self}, status=200)
 
                 else:
                     return JsonResponse({"error": "Invalid ID passed"}, status=400)
@@ -406,12 +406,62 @@ class Friend(APIView):
             return JsonResponse({"error": str(e)}, status=400)
 
 
+class FriendStatus(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        self.status = -1
+        try:
+
+            validator = IdValidator().validate(request.data)
+            validaction = validator[0]
+            if validaction:
+
+                self.user_id = str(request.data['id'])
+
+                status, user2 = validation.validateUser.validateAndGetUser(self.user_id)
+
+                if status and self.user_id != str(request.user.id):
+
+                    status12 = Friends.objects.filter(user1=self.request.user, user2=user2).exists()
+                    status21 = Friends.objects.filter(user1=user2, user2=self.request.user).exists()
+
+                    if status12:
+                        friendstat12 = Friends.objects.get(user1=self.request.user, user2=user2)
+                        self.status = friendstat12.friend_status
+
+                    elif status21:
+                        friendstat21 = Friends.objects.get(user1=user2, user2=self.request.user)
+
+                        if friendstat21.friend_status == 1:
+                            self.status = 3
+                        else:
+                            self.status = friendstat21.friend_status
+
+                    return JsonResponse({'status': self.status})
+
+                elif status and self.user_id == str(request.user.id):
+
+                    return JsonResponse({"error": " Cannot add friend to self "}, status=400)
+
+
+                else:
+                    return JsonResponse({"error": "Invalid ID"}, status=400)
+
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+
+            return JsonResponse({"error": str(e)}, status=400)
+
+
 class FriendCount(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         try:
-            FriendsCount = Friends.objects.filter(user1=self.request.user,friend_status=2).count()
+            FriendsCount = Friends.objects.filter(user1=self.request.user, friend_status=2).count()
 
             return JsonResponse({"count": FriendsCount}, status=200)
 
@@ -419,6 +469,33 @@ class FriendCount(APIView):
         except Exception as e:
             print(e.with_traceback())
             return JsonResponse({"count": "error"}, status=400)
+
+    def post(self, request):
+        try:
+            validator = IdValidator().validate(request.data)
+            validaction = validator[0]
+
+            if validaction:
+
+                self.user_id = str(request.data['id'])
+                status, requested_user = validation.validateUser.validateAndGetUser(self.user_id)
+
+                if status:
+                    FriendsCount = Friends.objects.filter(user1=requested_user, friend_status=2).count()
+
+                    return JsonResponse({"count": FriendsCount}, status=200)
+
+
+
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+            else:
+                return JsonResponse({"count": "error"}, status=400)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
 
 class Posts(APIView):
     permission_classes = (IsAuthenticated,)
@@ -444,32 +521,6 @@ class Posts(APIView):
 
         except Exception as e:
             return JsonResponse({"user_error": str(e)}, status=400)
-
-    def delete(self, request, *args, **kwargs):
-
-        try:
-            validator = IdValidator().validate(request.data)
-
-            if validator[0]:
-
-                self.post_id = str(request.data['id'])
-                status, post = validation.validateUser.validateAndGetPost(self.post_id)
-
-                if status:
-
-                    post.delete()
-
-                    return Response(PostGetSerializer(post).data, status=200)
-                else:
-                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
-
-
-
-            else:
-                return JsonResponse({"error": validator[1]}, status=400)
-
-        except Exception as e:
-            return JsonResponse({"post_error": str(e)}, status=400)
 
     def put(self, request, *args, **kwargs):
 
@@ -498,6 +549,7 @@ class Posts(APIView):
                 return JsonResponse({"error": validator[1]}, status=400)
 
         except Exception as e:
+            print(e.with_traceback())
             return JsonResponse({"user_error": str(e)}, status=400)
 
     def post(self, request, *args, **kwargs):
@@ -529,6 +581,40 @@ class Posts(APIView):
         except Exception as e:
             print(e.with_traceback())
             return JsonResponse({"user_error": str(e)}, status=400)
+
+
+class PostDelete(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            print(request.data)
+            validator = IdValidator().validate(request.data)
+
+            if validator[0]:
+
+                self.post_id = str(request.data['id'])
+                status, post = validation.validateUser.validateAndGetPost(self.post_id)
+
+                if status:
+
+                    post.delete()
+
+                    return Response(PostGetSerializer(post).data, status=200)
+                else:
+                    print(status)
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+
+
+
+            else:
+                print(validator[1])
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            print(e.with_traceback())
+            return JsonResponse({"post_error": str(e)}, status=400)
 
 
 class getLiked(APIView):
@@ -632,6 +718,34 @@ class PostCount(APIView):
         except Exception as e:
             print(e.with_traceback())
             return JsonResponse({"count": "error"}, status=400)
+
+    def post(self, request):
+        self.self = False
+        try:
+            validator = IdValidator().validate(request.data)
+            validaction = validator[0]
+
+            if validaction:
+
+                self.user_id = str(request.data['id'])
+                status, requested_user = validation.validateUser.validateAndGetUser(self.user_id)
+
+                if status:
+                    PostCount = Post.objects.filter(author=requested_user).count()
+
+                    return JsonResponse({"count": PostCount}, status=200)
+
+                    # return JsonResponse({'userfeed': self.serializer.data, 'self': self.self}, status=200)
+
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+            else:
+                return JsonResponse({"count": "error"}, status=400)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
 
 class PostLikesCount(APIView):
     permission_classes = (IsAuthenticated,)
@@ -899,3 +1013,79 @@ class MutualFriendsList(APIView):
 
         except Exception as e:
             return JsonResponse({"user_error": str(e)}, status=400)
+
+
+class Search(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            print(request.data)
+            validator = SearchValidate().validate(request.data)
+            validaction = validator[0]
+            if validaction:
+
+                self.input = str(request.data['input'])
+                self.input_split = self.input.split()
+
+                print(self.input_split[0])
+                if len(self.input_split) >= 2:
+                    result = User.objects.filter(first_name__contains=self.input_split[0],
+                                                 last_name__contains=self.input_split[1])
+                elif len(self.input_split) == 1:
+                    result = User.objects.filter(first_name__contains=self.input_split[0])
+                    result = result | User.objects.filter(username__icontains=self.input_split[0])
+                    result = result | User.objects.filter(last_name__contains=self.input_split[0])
+
+                    print(result)
+
+                return Response(UserGetMainSerializer(result, many=True).data, status=200)
+
+
+            else:
+                print(validator[1])
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            print(e.with_traceback())
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class LatestLikeOfPost(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+
+        try:
+
+            posts = Post.objects.filter(author=self.request.user)
+            response = {post.id: [Likes.objects.filter(post=post.id).last().person.id,
+                                  Likes.objects.filter(post=post.id).last().person.username, str(post.post_pics),
+                                  Likes.objects.filter(post=post.id).count() - 1] for post in posts if
+                        Likes.objects.filter(post=post.id).last()}
+
+            return JsonResponse(response, status=200, safe=True)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class LatestCommentsOfPost(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+
+        try:
+
+            posts = Post.objects.filter(author=self.request.user)
+            response = {post.id: [Comment.objects.filter(post=post.id).last().author.id,
+                                  Comment.objects.filter(post=post.id).last().author.username, str(post.post_pics),
+                                  Comment.objects.filter(post=post.id).count() - 1] for post in posts if
+                        Comment.objects.filter(post=post.id).last()}
+
+            return JsonResponse(response, status=200, safe=True)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
