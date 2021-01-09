@@ -31,6 +31,37 @@ from firstapp.Operations.friendsOps import *
 from firstapp.forms import UserProfileInfoForm, UserForm, PostForm
 from .Operations import friendsOps
 from .models import UserProfileInfo, Friends, Post, Comment, Likes
+from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
+from .Operations.pagination import PaginationHandlerMixin
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+
+
+class BasicPagination(PageNumberPagination):
+    page_size = 2
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 14
+
+
+class NewsFeedPostTest(APIView, PaginationHandlerMixin):
+    # permission_classes = (IsAuthenticated,)
+    pagination_class = BasicPagination
+    serializer_class = PostGetSerializer
+
+    def get(self, request, format=None, *args, **kwargs):
+        self.userId = kwargs['id']
+
+        status, requested_user = validation.validateUser.validateAndGetUser(self.userId)
+
+        instance = Post.objects.filter(author=requested_user.id).order_by('-created_date')
+        page = self.paginate_queryset(instance)
+        # page = str(request.data['page'])
+
+        # serializer = PaginatedPostGetSerializer(page)
+        serializer = self.serializer_class(page, many=True)
+        # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+        return self.get_paginated_response(serializer.data)
 
 
 class ValidateToken(APIView):
@@ -73,6 +104,7 @@ class BasicAuthenticateUserApi(APIView):
             self.username = unicode(decoded_credentials[0])
             self.password = unicode(decoded_credentials[1])
 
+            print(self.username, self.password)
             self.user = validateUser.authenticateUser(self.username, self.password)
             if self.user:
                 self.refresh, self.access_token = validateUser.getToken(self.user)
@@ -95,6 +127,25 @@ class NewsFeedPost(APIView):
             return Response(serializer.data)
         except:
             return JsonResponse({'status': 'Failed'}, status=400)
+
+
+class NewsFeedPostPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = BasicPagination
+    serializer_class = PostGetSerializer
+
+    def get(self, request, format=None, *args, **kwargs):
+        self.friends = Friends.objects.filter(user1=self.request.user, friend_status=2)
+        self.friends_id = [i.user2.id for i in self.friends]
+
+        instance = Post.objects.filter(author__in=self.friends_id).order_by('-created_date')
+        page = self.paginate_queryset(instance)
+        # page = str(request.data['page'])
+
+        # serializer = PaginatedPostGetSerializer(page)
+        serializer = self.serializer_class(page, many=True)
+        # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+        return self.get_paginated_response(serializer.data)
 
 
 class UserProfile(APIView):
@@ -188,7 +239,7 @@ class UserGetProfilePic(APIView):
 
 
 class UserFeed(APIView):
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         self.self = False
@@ -221,8 +272,65 @@ class UserFeed(APIView):
             return JsonResponse({"error": str(e)}, status=400)
 
 
-class FriendsList(APIView):
+class NewsFeedPostTest(APIView, PaginationHandlerMixin):
     # permission_classes = (IsAuthenticated,)
+    pagination_class = BasicPagination
+    serializer_class = PostGetSerializer
+
+    def get(self, request, format=None, *args, **kwargs):
+        self.userId = kwargs['id']
+
+        status, requested_user = validation.validateUser.validateAndGetUser(self.userId)
+
+        instance = Post.objects.filter(author=requested_user.id).order_by('-created_date')
+        page = self.paginate_queryset(instance)
+        # page = str(request.data['page'])
+
+        # serializer = PaginatedPostGetSerializer(page)
+        serializer = self.serializer_class(page, many=True)
+        # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+        return self.get_paginated_response(serializer.data)
+
+
+class UserFeedPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = BasicPagination
+    serializer_class = PostGetSerializer
+
+    def get(self, request, format=None, *args, **kwargs):
+        self.self = False
+        try:
+            validator = IdValidator().validate(kwargs)
+            validaction = validator[0]
+
+            if validaction:
+
+                userId = str(kwargs['id'])
+                status, requested_user = validation.validateUser.validateAndGetUser(userId)
+
+                if status:
+                    instance = Post.objects.filter(author=requested_user.id).order_by('-created_date')
+                    page = self.paginate_queryset(instance)
+                    if requested_user.id == request.user.id:
+                        self.self = True
+
+                    serializer = self.serializer_class(page, many=True)
+                    # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+                    return self.get_paginated_response(serializer.data)
+
+                    # return JsonResponse({'userfeed': self.serializer.data, 'self': self.self}, status=200)
+
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class FriendsList(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         self.self = False
@@ -243,7 +351,44 @@ class FriendsList(APIView):
                     if requested_user.id == request.user.id:
                         self.self = True
 
-                    return JsonResponse({'FriendsList': self.serializer.data, 'self': self.self}, status=200)
+                    return JsonResponse(self.serializer.data, safe=False, status=200)
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"})
+            else:
+                return JsonResponse({"error": validator[1]})
+
+        except Exception as e:
+
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class FriendsListPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPagination
+    serializer_class = FriendsGetSerializer
+
+    def get(self, request, **kwargs):
+        self.self = False
+        try:
+            validator = IdValidator().validate(kwargs)
+            validaction = validator[0]
+
+            if validaction:
+
+                userId = str(kwargs['id'])
+                status, requestedUser = validation.validateUser.validateAndGetUser(userId)
+
+                if status:
+                    instance = Friends.objects.filter(user1=requestedUser.id, friend_status=2)
+                    page = self.paginate_queryset(instance)
+
+                    if requestedUser.id == request.user.id:
+                        self.self = True
+
+                    serializer = self.serializer_class(page, many=True)
+                    # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+                    return self.get_paginated_response(serializer.data)
+
                 else:
                     return JsonResponse({"error": "Invalid ID passed"})
             else:
@@ -257,11 +402,28 @@ class FriendsList(APIView):
 class FriendRequest(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def get(self, request):
         try:
             self.serializer = FriendsGetSerializer(Friends.objects.filter(user2=self.request.user, friend_status=1),
                                                    many=True)
-            return Response(self.serializer, status=200)
+            return Response(self.serializer.data, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class FriendRequestPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = BasicPagination
+    serializer_class = FriendsGetSerializer
+
+    def get(self, request):
+        try:
+            instance = Friends.objects.filter(user2=self.request.user, friend_status=1)
+            page = self.paginate_queryset(instance)
+            serializer = self.serializer_class(page, many=True)
+            # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+            return self.get_paginated_response(serializer.data)
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
@@ -279,8 +441,7 @@ class Register(APIView):
             if validator[0]:
                 self.data = request.data.copy()
                 status, self.user, self.myResponse = Registration().userValidate(request.data)
-
-                print(status, self.myResponse)
+                # print(status,self.user.id, self.myResponse)
                 if status:
                     self.data['user'] = self.user.id
                     userprofile = UserProfileInfoSaveSerializer(data=self.data)
@@ -292,10 +453,11 @@ class Register(APIView):
                         self.myResponse = {"userprofile_error": userprofile.errors}
 
                 if validator[1] is None:
-                    error = self.myResponse
+                    # error = self.myResponse
+                    return JsonResponse(self.myResponse, status=200)
                 else:
                     error = {**validator[1], **self.myResponse}
-                return JsonResponse({"error": error}, status=400)
+                    return JsonResponse({"error": error}, status=400)
 
             else:
                 return JsonResponse({"error": validator[1]}, status=400)
@@ -803,6 +965,36 @@ class PostLikesList(APIView):
             return JsonResponse({"user_error": str(e)}, status=400)
 
 
+class PostLikesListPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPagination
+    serializer_class = LikesGetSerializer
+
+    def get(self, request, format=None, *args, **kwargs):
+        try:
+            validator = IdValidator().validate(kwargs)
+            if validator[0]:
+
+                postId = str(kwargs['id'])
+                status, post = validation.validateUser.validateAndGetPost(postId)
+
+                if status:
+                    instance = Likes.objects.filter(post=post).order_by('-created_date')
+                    page = self.paginate_queryset(instance)
+
+                    serializer = self.serializer_class(page, many=True)
+                    # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+                    return self.get_paginated_response(serializer.data)
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"user_error": str(e)}, status=400)
+
+
 class PostCommentsList(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -821,6 +1013,37 @@ class PostCommentsList(APIView):
                         many=True)
 
                     return Response(comment.data, status=200)
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"user_error": str(e)}, status=400)
+
+
+class PostCommentsListPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPagination
+    serializer_class = CommentGetSerializer
+
+    def get(self, request, **kwargs):
+        try:
+            validator = IdValidator().validate(kwargs)
+            if validator[0]:
+
+                postId = str(kwargs['id'])
+                status, post = validation.validateUser.validateAndGetPost(postId)
+
+                if status:
+
+                    instance = Comment.objects.filter(post=post).order_by('-created_date')
+                    page = self.paginate_queryset(instance)
+
+                    serializer = self.serializer_class(page, many=True)
+                    # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+                    return self.get_paginated_response(serializer.data)
                 else:
                     return JsonResponse({"error": "Invalid ID passed"}, status=400)
 
@@ -943,42 +1166,7 @@ class Comments(APIView):
 
 
 class MutualFriendsList(APIView):
-    # permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        try:
-            validator = IdValidator().validate(request.data)
-            if validator[0]:
-
-                self.user_id = str(request.data['id'])
-                status, user2 = validation.validateUser.validateAndGetUser(self.user_id)
-
-                if status:
-
-                    if self.request.user != user2:
-                        friendsUser = Friends.objects.filter(user1=self.request.user, friend_status=2)
-                        friendsUserId = [i.user2.id for i in friendsUser]
-
-                        friendsOtherUser = Friends.objects.filter(user1=user2, friend_status=2)
-                        friendsOtherUserId = [i.user2.id for i in friendsOtherUser]
-
-                        mutualFriends = list(set(friendsUserId).intersection(friendsOtherUserId))
-
-                        self.count = User.objects.filter(id__in=mutualFriends).count()
-
-                        return JsonResponse({"count": self.count}, status=200)
-
-                    else:
-                        return JsonResponse({"error": "ID passed is self"}, status=400)
-
-                else:
-                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
-
-            else:
-                return JsonResponse({"error": validator[1]}, status=400)
-
-        except Exception as e:
-            return JsonResponse({"user_error": str(e)}, status=400)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         try:
@@ -1015,6 +1203,87 @@ class MutualFriendsList(APIView):
             return JsonResponse({"user_error": str(e)}, status=400)
 
 
+class MutualFriendsListPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPagination
+    serializer_class = UserGetMainSerializer
+
+    def get(self, request, **kwargs):
+        try:
+            validator = IdValidator().validate(kwargs)
+            if validator[0]:
+
+                userId = str(kwargs['id'])
+                status, user2 = validation.validateUser.validateAndGetUser(userId)
+
+                if status:
+
+                    if self.request.user != user2:
+                        friendsUser = Friends.objects.filter(user1=self.request.user, friend_status=2)
+                        friendsUserId = [i.user2.id for i in friendsUser]
+
+                        friendsOtherUser = Friends.objects.filter(user1=user2, friend_status=2)
+                        friendsOtherUserId = [i.user2.id for i in friendsOtherUser]
+
+                        mutualFriends = list(set(friendsUserId).intersection(friendsOtherUserId))
+                        instance = User.objects.filter(id__in=mutualFriends)
+                        page = self.paginate_queryset(instance)
+
+                        serializer = self.serializer_class(page, many=True)
+                        # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+                        return self.get_paginated_response(serializer.data)
+
+                    else:
+                        return JsonResponse({"error": "ID passed is self"}, status=400)
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"user_error": str(e)}, status=400)
+
+
+class MutualFriendsCount(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            validator = IdValidator().validate(request.data)
+            if validator[0]:
+
+                self.user_id = str(request.data['id'])
+                status, user2 = validation.validateUser.validateAndGetUser(self.user_id)
+
+                if status:
+
+                    if self.request.user != user2:
+                        friendsUser = Friends.objects.filter(user1=self.request.user, friend_status=2)
+                        friendsUserId = [i.user2.id for i in friendsUser]
+
+                        friendsOtherUser = Friends.objects.filter(user1=user2, friend_status=2)
+                        friendsOtherUserId = [i.user2.id for i in friendsOtherUser]
+
+                        mutualFriends = list(set(friendsUserId).intersection(friendsOtherUserId))
+
+                        self.count = User.objects.filter(id__in=mutualFriends).count()
+
+                        return JsonResponse({"count": self.count}, status=200)
+
+                    else:
+                        return JsonResponse({"error": "ID passed is self"}, status=400)
+
+                else:
+                    return JsonResponse({"error": "Invalid ID passed"}, status=400)
+
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"user_error": str(e)}, status=400)
+
+
 class Search(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -1031,11 +1300,13 @@ class Search(APIView):
                 print(self.input_split[0])
                 if len(self.input_split) >= 2:
                     result = User.objects.filter(first_name__contains=self.input_split[0],
-                                                 last_name__contains=self.input_split[1])
+                                                 last_name__contains=self.input_split[1]).exclude(id=request.user.id)
                 elif len(self.input_split) == 1:
-                    result = User.objects.filter(first_name__contains=self.input_split[0])
-                    result = result | User.objects.filter(username__icontains=self.input_split[0])
-                    result = result | User.objects.filter(last_name__contains=self.input_split[0])
+                    result = User.objects.filter(first_name__contains=self.input_split[0]).exclude(id=request.user.id)
+                    result = result | User.objects.filter(username__icontains=self.input_split[0]).exclude(
+                        id=request.user.id)
+                    result = result | User.objects.filter(last_name__contains=self.input_split[0]).exclude(
+                        id=request.user.id)
 
                     print(result)
 
@@ -1051,6 +1322,48 @@ class Search(APIView):
             return JsonResponse({"error": str(e)}, status=400)
 
 
+class SearchPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPagination
+    serializer_class = UserGetMainSerializer
+
+    def get(self, request, **kwargs):
+        try:
+            print(kwargs)
+            validator = SearchValidate().validate(kwargs)
+            validaction = validator[0]
+            if validaction:
+
+                inputGet = str(kwargs['input'])
+                inputSplit = inputGet.split()
+                instance = None
+
+                print(inputSplit[0])
+                if len(inputSplit) >= 2:
+                    instance = User.objects.filter(first_name__contains=inputSplit[0],
+                                                   last_name__contains=inputSplit[1]).exclude(id=request.user.id)
+                elif len(inputSplit) == 1:
+                    instance = User.objects.filter(first_name__contains=inputSplit[0]).exclude(id=request.user.id)
+                    instance = instance | User.objects.filter(username__icontains=inputSplit[0]).exclude(
+                        id=request.user.id)
+                    instance = instance | User.objects.filter(last_name__contains=inputSplit[0]).exclude(
+                        id=request.user.id)
+
+                page = self.paginate_queryset(instance)
+
+                serializer = self.serializer_class(page, many=True)
+                # serializer = self.get_paginated_response(self.serializer_class(page,many=True).data)
+                return self.get_paginated_response(serializer.data)
+
+
+            else:
+                print(validator[1])
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
 class LatestLikeOfPost(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -1058,13 +1371,35 @@ class LatestLikeOfPost(APIView):
 
         try:
 
-            posts = Post.objects.filter(author=self.request.user)
-            response = {post.id: [Likes.objects.filter(post=post.id).last().person.id,
-                                  Likes.objects.filter(post=post.id).last().person.username, str(post.post_pics),
-                                  Likes.objects.filter(post=post.id).count() - 1] for post in posts if
-                        Likes.objects.filter(post=post.id).last()}
+            page = str(self.request.query_params.get('page', None))
+            queryset = Post.objects.filter(author=self.request.user)
+            paginator = Paginator(queryset, 9)
+            posts = paginator.page(page)
 
-            return JsonResponse(response, status=200, safe=True)
+            #posts = Post.objects.filter(author=self.request.user)
+            # response = [[post.id,
+            #              Likes.objects.filter(post=post.id).last().person.id,
+            #              Likes.objects.filter(post=post.id).last().person.username,
+            #              str(post.post_pics),
+            #              Likes.objects.filter(post=post.id).count() - 1,
+            #              Likes.objects.filter(post=post.id).last().created_date
+            #              ] for post in posts if
+            #             Likes.objects.filter(post=post.id).last()]
+
+            res = []
+            for post in posts:
+                like = Likes.objects.filter(post=post.id).exclude(person=request.user)
+                if like.last():
+                    nested = {}
+                    nested["postID"] = "l" + str(post.id)
+                    nested["personID"] = like.last().person.id
+                    nested["personUsername"] = like.last().person.username
+                    nested["PostImgUrl"] = str(post.post_pics)
+                    nested["count"] = like.count() - 1
+                    nested["date"] = like.last().created_date
+                    res.append(nested)
+
+            return JsonResponse(res, status=200, safe=False)
 
 
         except Exception as e:
@@ -1079,12 +1414,65 @@ class LatestCommentsOfPost(APIView):
         try:
 
             posts = Post.objects.filter(author=self.request.user)
-            response = {post.id: [Comment.objects.filter(post=post.id).last().author.id,
-                                  Comment.objects.filter(post=post.id).last().author.username, str(post.post_pics),
-                                  Comment.objects.filter(post=post.id).count() - 1] for post in posts if
-                        Comment.objects.filter(post=post.id).last()}
+            # response = {post.id: [Comment.objects.filter(post=post.id).last().author.id,
+            #                       Comment.objects.filter(post=post.id).last().author.username, str(post.post_pics),
+            #                       Comment.objects.filter(post=post.id).count() - 1] for post in posts if
+            #             Comment.objects.filter(post=post.id).last()}
+            #
+            # return JsonResponse(response, status=200, safe=True)
 
-            return JsonResponse(response, status=200, safe=True)
+            res = []
+            for post in posts:
+                comment = Comment.objects.filter(post=post.id).exclude(author=request.user)
+                if comment.last():
+                    nested = {}
+                    nested["postID"] = "c" + str(post.id)
+                    nested["personID"] = comment.last().author.id
+                    nested["personUsername"] = comment.last().author.username
+                    nested["PostImgUrl"] = str(post.post_pics)
+                    nested["count"] = comment.count() - 1
+                    nested["date"] = comment.last().created_date
+                    res.append(nested)
+
+            return JsonResponse(res, status=200, safe=False)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class LatestCommentsOfPostPagination(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, **kwargs):
+
+        try:
+            page = str(self.request.query_params.get('page', None))
+            queryset = Post.objects.filter(author=self.request.user)
+            paginator = Paginator(queryset, 9)
+            posts = paginator.page(page)
+
+            # response = {post.id: [Comment.objects.filter(post=post.id).last().author.id,
+            #                       Comment.objects.filter(post=post.id).last().author.username, str(post.post_pics),
+            #                       Comment.objects.filter(post=post.id).count() - 1] for post in posts if
+            #             Comment.objects.filter(post=post.id).last()}
+            #
+            # return JsonResponse(response, status=200, safe=True)
+
+            res = []
+            for post in posts:
+                comment = Comment.objects.filter(post=post.id).exclude(author=request.user)
+                if comment.last():
+                    nested = {}
+                    nested["postID"] = "c" + str(post.id)
+                    nested["personID"] = comment.last().author.id
+                    nested["personUsername"] = comment.last().author.username
+                    nested["PostImgUrl"] = str(post.post_pics)
+                    nested["count"] = comment.count() - 1
+                    nested["date"] = comment.last().created_date
+                    res.append(nested)
+
+            return JsonResponse(res, status=200, safe=False)
 
 
         except Exception as e:

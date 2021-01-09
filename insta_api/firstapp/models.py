@@ -34,6 +34,7 @@ class Friends(models.Model):
     user1 = models.ForeignKey(User, on_delete=models.PROTECT)
     user2 = models.ForeignKey(User, on_delete=models.PROTECT, related_name='user2')
     friend_status = models.PositiveIntegerField(null=False, default=0)
+    created_date = models.DateTimeField(blank=True, default=timezone.now)
 
     def __str__(self):
         return self.user1.username

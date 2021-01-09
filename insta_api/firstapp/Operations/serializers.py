@@ -1,5 +1,5 @@
 from django.contrib.auth.hashers import make_password
-from rest_framework import serializers
+from rest_framework import serializers, pagination
 from firstapp.models import UserProfileInfo, Friends, Post, Comment, Likes, User
 
 
@@ -17,6 +17,12 @@ class PostGetSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class PaginatedPostGetSerializer(pagination.PageNumberPagination):
+
+    class Meta:
+        object_serializer_class = PostGetSerializer
+
+
 class PostSaveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
@@ -32,7 +38,7 @@ class UserProfileInfoGetSerializer(serializers.ModelSerializer):
 
 
 class UserProfileInfoSaveSerializer(serializers.ModelSerializer):
-    user = UserGetMainSerializer(many=False)
+    # user = UserGetMainSerializer(many=False)
 
     class Meta:
         model = UserProfileInfo

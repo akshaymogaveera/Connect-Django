@@ -1,49 +1,59 @@
 from django.conf.urls import url
 from firstapp import views
-from django.urls import path,include
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework_simplejwt import views as jwt_views
+
 # TEMPLATE URLS!
 app_name = 'firstapp'
 
 urlpatterns = [
-    path('validate/token/', views.ValidateToken.as_view(), name='ValidateToken'),
-    path('api/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/', views.AuthenticateUserApi.as_view(), name='auth'),
-    path('basic/auth/', views.BasicAuthenticateUserApi.as_view(), name='auth'),
-    path('newsfeed/', views.NewsFeedPost.as_view(), name='newsfeed'),
-    path('user/main/info/', views.UserMainInfo.as_view(), name='userinfo'),
-    path('user/profile/info/', views.UserProfile.as_view(), name='userinfo'),
-    path('user/profile/pic/', views.UserGetProfilePic.as_view(), name='UserGetProfilePic'),
-    path('user/feed/', views.UserFeed.as_view(), name='userfeed'),
-    path('friend/list/', views.FriendsList.as_view(), name='friendslist'),
-    path('friend/request/', views.FriendRequest.as_view(), name='friendrequest'),
-    path('friend/edit/', views.Friend.as_view(), name='friend'),
-    path('friend/mutual/', views.MutualFriendsList.as_view(), name='mutualfriend'),
-    path('friend/count/', views.FriendCount.as_view(), name='PostCount'),
-    path('friend/status/', views.FriendStatus.as_view(), name='FriendStatus'),
-    path('register/', views.Register.as_view(), name='FriendCount'),
-    path('post/', views.Posts.as_view(), name='post'),
-    path('register/update/', views.RegisterUpdate.as_view(), name='registerupdate'),
-    path('post/like/', views.Like.as_view(), name='like'),
-    path('post/comment/', views.Comments.as_view(), name='comment'),
-    path('post/comments/list/', views.PostCommentsList.as_view(), name='postcommentslist'),
-    path('post/comments/count/', views.PostCommentsCount.as_view(), name='postcommentscount'),
-    path('post/likes/list/', views.PostLikesList.as_view(), name='postlikeslist'),
-    path('post/likes/count/', views.PostLikesCount.as_view(), name='postlikescount'),
-    path('post/liked/', views.getLiked.as_view(), name='getLiked'),
-    path('post/count/', views.PostCount.as_view(), name='PostCount'),
-    path('post/delete/', views.PostDelete.as_view(), name='PostDelete'),
-    path('post/latest/like/', views.LatestLikeOfPost.as_view(), name='LatestLikeOfPost'),
-    path('post/latest/comments/', views.LatestCommentsOfPost.as_view(), name='LatestCommentsOfPost'),
-    path('search/', views.Search.as_view(), name='Search'),
+                  path('validate/token/', views.ValidateToken.as_view(), name='ValidateToken'),
+                  path('api/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+                  path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+                  path('auth/', views.AuthenticateUserApi.as_view(), name='auth'),
+                  path('basic/auth/', views.BasicAuthenticateUserApi.as_view(), name='auth'),
+                  path('newsfeed/', views.NewsFeedPost.as_view(), name='newsfeed'),
+                  url('newsfeed/test/(?P<id>\d+)/$', views.NewsFeedPostTest.as_view(), name='urlname'),
+                  url('newsfeed/pagination/$', views.NewsFeedPostPagination.as_view(), name='NewsFeedPostPagination'),
+                  #path('newsfeed/test/(?P<id>\d+)/', views.NewsFeedPostTest.as_view(), name='newsfeedTest'),
+                  path('user/main/info/', views.UserMainInfo.as_view(), name='userinfo'),
+                  path('user/profile/info/', views.UserProfile.as_view(), name='userinfo'),
+                  path('user/profile/pic/', views.UserGetProfilePic.as_view(), name='UserGetProfilePic'),
+                  path('user/feed/', views.UserFeed.as_view(), name='userfeed'),
+                  url('user/(?P<id>\d+)/feed/$', views.UserFeedPagination.as_view(), name='UserFeedPagination'),
+                  path('friend/list/', views.FriendsList.as_view(), name='friendslist'),
+                  url('friend/(?P<id>\d+)/list/$', views.FriendsListPagination.as_view(), name='FriendsListPagination'),
+                  #path('friend/request/', views.FriendRequest.as_view(), name='friendrequest'),
+                  path('friend/request/', views.FriendRequestPagination.as_view(), name='friendrequest'),
+                  path('friend/edit/', views.Friend.as_view(), name='friend'),
+                  path('friend/mutual/list/', views.MutualFriendsList.as_view(), name='MutualFriendsList'),
+                  url('friend/(?P<id>\d+)/mutual/list/$', views.MutualFriendsListPagination.as_view(), name='MutualFriendsListPagination'),
+                  path('friend/mutual/count/', views.MutualFriendsCount.as_view(), name='MutualFriendsCount'),
+                  path('friend/count/', views.FriendCount.as_view(), name='PostCount'),
+                  path('friend/status/', views.FriendStatus.as_view(), name='FriendStatus'),
+                  path('register/', views.Register.as_view(), name='FriendCount'),
+                  path('post/', views.Posts.as_view(), name='post'),
+                  path('register/update/', views.RegisterUpdate.as_view(), name='registerupdate'),
+                  path('post/like/', views.Like.as_view(), name='like'),
+                  path('post/comment/', views.Comments.as_view(), name='comment'),
+                  path('post/comments/list/', views.PostCommentsList.as_view(), name='postcommentslist'),
+                  url('post/(?P<id>\d+)/comments/list/$', views.PostCommentsListPagination.as_view(), name='PostCommentsListPagination'),
+                  path('post/comments/count/', views.PostCommentsCount.as_view(), name='postcommentscount'),
+                  path('post/likes/list/', views.PostLikesList.as_view(), name='postlikeslist'),
+                  url('post/(?P<id>\d+)/likes/list/$', views.PostLikesListPagination.as_view(), name='PostLikesListPagination'),
+                  path('post/likes/count/', views.PostLikesCount.as_view(), name='postlikescount'),
+                  path('post/liked/', views.getLiked.as_view(), name='getLiked'),
+                  path('post/count/', views.PostCount.as_view(), name='PostCount'),
+                  path('post/delete/', views.PostDelete.as_view(), name='PostDelete'),
+                  path('post/latest/like/', views.LatestLikeOfPost.as_view(), name='LatestLikeOfPost'),
+                  #path('post/latest/comments/', views.LatestCommentsOfPost.as_view(), name='LatestCommentsOfPost'),
+                  path('post/latest/comments/', views.LatestCommentsOfPostPagination.as_view(), name='LatestCommentsOfPost'),
+                  path('search/', views.Search.as_view(), name='Search'),
+                  path('search/<str:input>/', views.SearchPagination.as_view(), name='SearchPagination'),
 
-
-
-
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 '''
     #url(r'^register/$', views.register, name='register'),

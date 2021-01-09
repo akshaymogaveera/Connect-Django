@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
 
@@ -56,10 +57,14 @@ class Registration:
     def userValidate(self, data):
         self.status = False
         self.user = None
+        # data['password'] = make_password(data['password'])
+        print(data)
         userserializer = UserSerializer(data=data)
         if userserializer.is_valid():
             try:
                 self.user = userserializer.save()
+                # self.user.set_password(password)
+                # self.user.save()
                 if self.user:
                     self.status = True
                     self.myresponse = {"user": userserializer.data}
@@ -79,7 +84,7 @@ class FriendActionValidator(PayloadValidator):
     strict = True
     id = datatypes.Function('validate_id', error='Invalid Id', )
     # action = datatypes.String(error='action must be a string')
-    action = datatypes.Function('validate_action',error='action can be either add or  delete')
+    action = datatypes.Function('validate_action', error='action can be either add or  delete')
 
     def validate_action(self, val, **kwargs):
         if val == 'add' or val == 'delete':
@@ -111,14 +116,14 @@ class PostValidator(PayloadValidator):
     post_pics = datatypes.Function('validatePostPic', required=False)
     text = datatypes.Function('validateText', error='Invalid characters present', required=False)
 
-    def validateText(self, val, errors,*args, **kwargs):
+    def validateText(self, val, errors, *args, **kwargs):
         if val is None:
             return True
         elif 0 < len(str(val)) < 250 and not str(val).isspace():
             return True
         return False
 
-    def validatePostPic(self, val, errors, *args,**kwargs):
+    def validatePostPic(self, val, errors, *args, **kwargs):
         return True
 
 
@@ -159,7 +164,7 @@ class PostUpdateValidator(PayloadValidator):
         return True
 
     def validate_id(self, val, **kwargs):
-        val=str(val)
+        val = str(val)
         if val.isdigit() and 0 < len(val) < 15 and not val.__contains__(" "):
             return True
         return False
@@ -184,7 +189,7 @@ class RegisterValidate(PayloadValidator):
     profile_pic = datatypes.Function('validateProfilePic')
 
     def validateUsername(self, val, payload, errors, **kwargs):
-        val=str(val)
+        val = str(val)
         if not val.isalnum() or val.isdigit():
             errors.append("Username should be Alphanumeric")
             return False
@@ -218,17 +223,20 @@ class RegisterValidate(PayloadValidator):
             return True
 
     def validateSex(self, val, **kwargs):
+        val = str(val).lower()
         if val == 'male' or val == 'female':
             return True
         return False
 
     def validateCountry(self, val, **kwargs):
+        val = str(val).lower()
         if val == 'india' or val == 'usa' or val == 'canada':
             return True
         return False
 
     def validateCity(self, val, **kwargs):
-        if val == 'mumbai' or val == 'delhi' or val == 'bangalore' or val == 'pune' or val == 'hyderabad' \
+        val = str(val).lower()
+        if val == 'mumbai' or val == 'new delhi' or val == 'bangalore' or val == 'pune' or val == 'hyderabad' \
                 or val == 'chennai' or val == 'kolkata' or val == 'mangalore' \
                 or val == 'new york' or val == 'los angeles' or val == 'san francisco' or val == 'chicago' \
                 or val == 'montreal' or val == 'sherbrooke' or val == 'toronto' or val == 'vancouver' \
@@ -274,7 +282,7 @@ class RegisterUpdateValidate(PayloadValidator):
     profile_pic = datatypes.Function('validateProfilePic', required=False)
 
     def validateEmail(self, val, **kwargs):
-        val=str(val)
+        val = str(val)
         if val or val != "sameEmail":
             if validateUser.validateEmail(val):
                 return False
@@ -284,12 +292,14 @@ class RegisterUpdateValidate(PayloadValidator):
             return True
 
     def validateCountry(self, val, **kwargs, ):
+        val = str(val).lower()
         if val == 'india' or val == 'usa' or val == 'canada' or val is None:
             return True
         return False
 
     def validateCity(self, val, **kwargs):
-        if val == 'mumbai' or val == 'delhi' or val == 'bangalore' or val == 'pune' or val == 'hyderabad' \
+        val = str(val).lower()
+        if val == 'mumbai' or val == 'new delhi' or val == 'bangalore' or val == 'pune' or val == 'hyderabad' \
                 or val == 'chennai' or val == 'kolkata' or val == 'mangalore' \
                 or val == 'new york' or val == 'los angeles' or val == 'san francisco' or val == 'chicago' \
                 or val == 'montreal' or val == 'sherbrooke' or val == 'toronto' or val == 'vancouver' \
@@ -299,6 +309,7 @@ class RegisterUpdateValidate(PayloadValidator):
 
     def validateProfilePic(self, val, **kwargs):
         return True
+
 
 class SearchValidate(PayloadValidator):
     strict = True
