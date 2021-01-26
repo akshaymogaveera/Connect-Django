@@ -82,6 +82,7 @@ class Comment(models.Model):
         return self.text
 
 
+
 class Likes(models.Model):
     post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE)
     person = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -92,3 +93,4 @@ class Likes(models.Model):
 
     def __str__(self):
         return self.post.text
+

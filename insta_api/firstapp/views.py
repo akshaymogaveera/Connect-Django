@@ -44,6 +44,10 @@ class CustomPagination(PageNumberPagination):
     page_size = 14
 
 
+class NotificationPage(PageNumberPagination):
+    page_size = 4
+
+
 class NewsFeedPostTest(APIView, PaginationHandlerMixin):
     # permission_classes = (IsAuthenticated,)
     pagination_class = BasicPagination
@@ -87,7 +91,9 @@ class AuthenticateUserApi(APIView):
             self.user = validateUser.authenticateUser(self.username, self.password)
             if self.user:
                 self.refresh, self.access_token = validateUser.getToken(self.user)
-                return JsonResponse({'refresh': self.refresh, 'access': self.access_token, 'id': self.user.id})
+                userInfo = UserProfileInfo.objects.get(user=self.user)
+                return JsonResponse({'refresh': self.refresh, 'access': self.access_token, 'id': self.user.id,
+                                     'userName': self.user.username,'profile_pic':str(userInfo.profile_pic)})
             else:
                 return JsonResponse({'status': 'Failed', 'message': "Authentication Failed"}, status=400)
         except:
@@ -108,10 +114,13 @@ class BasicAuthenticateUserApi(APIView):
             self.user = validateUser.authenticateUser(self.username, self.password)
             if self.user:
                 self.refresh, self.access_token = validateUser.getToken(self.user)
-                return JsonResponse({'refresh': self.refresh, 'access': self.access_token, 'id': self.user.id})
+                userInfo = UserProfileInfo.objects.get(user=self.user)
+                return JsonResponse({'refresh': self.refresh, 'access': self.access_token, 'id': self.user.id,
+                                     'userName': self.user.username, 'profile_pic':str(userInfo.profile_pic)})
             else:
                 return JsonResponse({'status': 'Failed', 'message': "Authentication Failed"}, status=400)
-        except:
+        except Exception as e:
+            print(e)
             return JsonResponse({'status': 'Failed', 'message': "Authentication Failed"}, status=400)
 
 
@@ -211,7 +220,7 @@ class UserMainInfo(APIView):
 
 
 class UserGetProfilePic(APIView):
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         self.self = False
@@ -437,32 +446,40 @@ class Register(APIView):
         try:
 
             validator = RegisterValidate().validate(request.data)
-
+            print("validator")
+            print(validator)
             if validator[0]:
                 self.data = request.data.copy()
                 status, self.user, self.myResponse = Registration().userValidate(request.data)
-                # print(status,self.user.id, self.myResponse)
+                print("status")
+                print(status, self.myResponse)
                 if status:
                     self.data['user'] = self.user.id
                     userprofile = UserProfileInfoSaveSerializer(data=self.data)
                     if userprofile.is_valid():
                         userprofile.save()
                         self.myResponse["userprofile"] = userprofile.data
+                        # return JsonResponse(self.myResponse, status=200)
                     else:
+                        userProfileError = True
                         Registration.deleteUser(self.user)
                         self.myResponse = {"userprofile_error": userprofile.errors}
+                        print(self.myResponse)
+                        # return JsonResponse({"error": self.myResponse}, status=400)
 
-                if validator[1] is None:
+                if validator[1] is None and status is True:
                     # error = self.myResponse
                     return JsonResponse(self.myResponse, status=200)
                 else:
-                    error = {**validator[1], **self.myResponse}
-                    return JsonResponse({"error": error}, status=400)
+                    # error = {**validator[1], **self.myResponse}
+                    # print(error)
+                    return JsonResponse({"error": self.myResponse}, status=400)
 
             else:
                 return JsonResponse({"error": validator[1]}, status=400)
 
         except Exception as e:
+            # print(e)
             return JsonResponse({"user_error": str(e)}, status=400)
 
 
@@ -495,7 +512,7 @@ class RegisterUpdate(APIView):
 
                 userinfo.save()
                 user.save()
-
+                print(UserProfileInfoGetSerializer(userinfo).data)
                 return Response(UserProfileInfoGetSerializer(userinfo).data, status=200)
 
 
@@ -1165,6 +1182,40 @@ class Comments(APIView):
             return JsonResponse({"post_error": str(e)}, status=400)
 
 
+class CommentsDelete(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+
+        try:
+            validator = IdValidator().validate(request.data)
+
+            if validator[0]:
+
+                self.comment_id = str(request.data['id'])
+                status, comment = validation.validateUser.validateAndGetComment(self.comment_id)
+
+                if status:
+
+                    post = Post.objects.get(id=comment.post.id)
+                    if self.request.user == comment.author or self.request.user == post.author:
+                        comment.delete()
+                    else:
+                        return JsonResponse({"error": "Comment doesn't belong to requested User or Post"}, status=400)
+
+                    return Response(CommentGetSerializer(comment).data, status=200)
+                else:
+                    return JsonResponse({"error": "Invalid ID passed "}, status=400)
+
+
+
+            else:
+                return JsonResponse({"error": validator[1]}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"post_error": str(e)}, status=400)
+
+
 class MutualFriendsList(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -1364,40 +1415,51 @@ class SearchPagination(APIView, PaginationHandlerMixin):
             return JsonResponse({"error": str(e)}, status=400)
 
 
-class LatestLikeOfPost(APIView):
+class LatestLikeOfPostPagination(APIView):
     permission_classes = (IsAuthenticated,)
+    #pagination_class = BasicPagination
 
     def get(self, request):
 
         try:
-
             page = str(self.request.query_params.get('page', None))
-            queryset = Post.objects.filter(author=self.request.user)
-            paginator = Paginator(queryset, 9)
-            posts = paginator.page(page)
-
-            #posts = Post.objects.filter(author=self.request.user)
-            # response = [[post.id,
-            #              Likes.objects.filter(post=post.id).last().person.id,
-            #              Likes.objects.filter(post=post.id).last().person.username,
-            #              str(post.post_pics),
-            #              Likes.objects.filter(post=post.id).count() - 1,
-            #              Likes.objects.filter(post=post.id).last().created_date
-            #              ] for post in posts if
-            #             Likes.objects.filter(post=post.id).last()]
-
+            posts = Post.objects.filter(author=self.request.user)
+            instance = Likes.objects.filter(post__in=posts) \
+                .order_by('-created_date') \
+                .exclude(person=self.request.user) \
+                .values_list('post', flat=True) \
+                .distinct()
+            #likes = self.paginate_queryset(instance)
+            print(instance)
+            likes = list(dict.fromkeys(instance))
+            paginator = Paginator(likes, 4)
+            likes = paginator.page(page)
+            print(likes)
+            #likes = self.paginate_queryset(likes)
             res = []
-            for post in posts:
-                like = Likes.objects.filter(post=post.id).exclude(person=request.user)
-                if like.last():
-                    nested = {}
-                    nested["postID"] = "l" + str(post.id)
-                    nested["personID"] = like.last().person.id
-                    nested["personUsername"] = like.last().person.username
-                    nested["PostImgUrl"] = str(post.post_pics)
-                    nested["count"] = like.count() - 1
-                    nested["date"] = like.last().created_date
-                    res.append(nested)
+            # for post in posts:
+            #     like = Likes.objects.filter(post=post.id).exclude(person=request.user)
+            #     if like.last():
+            #         nested = {}
+            #         nested["postID"] = "l" + str(post.id)
+            #         nested["personID"] = like.last().person.id
+            #         nested["personUsername"] = like.last().person.username
+            #         nested["PostImgUrl"] = str(post.post_pics)
+            #         nested["count"] = like.count() - 1
+            #         nested["date"] = like.last().created_date
+            #         res.append(nested)
+
+            for postId in likes:
+                post = posts.get(id=postId)
+                like = Likes.objects.filter(post=postId).exclude(person=request.user)
+                nested = {}
+                nested["postID"] = "l" + str(post.id)
+                nested["personID"] = like.last().person.id
+                nested["personUsername"] = like.last().person.username
+                nested["PostImgUrl"] = str(post.post_pics)
+                nested["count"] = like.count() - 1
+                nested["date"] = like.last().created_date
+                res.append(nested)
 
             return JsonResponse(res, status=200, safe=False)
 
@@ -1441,7 +1503,45 @@ class LatestCommentsOfPost(APIView):
             return JsonResponse({"error": str(e)}, status=400)
 
 
-class LatestCommentsOfPostPagination(APIView):
+class LatestCommentsOfPostPagination(APIView, PaginationHandlerMixin):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = NotificationPage
+
+    def get(self, request, **kwargs):
+
+        try:
+            page = str(self.request.query_params.get('page', None))
+            posts = Post.objects.filter(author=self.request.user)
+            instance = Comment.objects.filter(post__in=posts) \
+                .order_by('-created_date') \
+                .exclude(author=self.request.user) \
+                .values_list('post', flat=True) \
+                .distinct()
+            #comments = self.paginate_queryset(instance)
+            comments = list(dict.fromkeys(instance))
+            paginator = Paginator(comments, 4)
+            comments = paginator.page(page)
+            res = []
+            for postId in comments:
+                post = posts.get(id=postId)
+                comment = Comment.objects.filter(post=postId).exclude(author=request.user)
+                nested = {}
+                nested["postID"] = "c" + str(post.id)
+                nested["personID"] = comment.last().author.id
+                nested["personUsername"] = comment.last().author.username
+                nested["PostImgUrl"] = str(post.post_pics)
+                nested["count"] = comment.count() - 1
+                nested["date"] = comment.last().created_date
+                res.append(nested)
+
+            return JsonResponse(res, status=200, safe=False)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class LatestCommentsAndLikesPagination(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, **kwargs):
@@ -1449,30 +1549,56 @@ class LatestCommentsOfPostPagination(APIView):
         try:
             page = str(self.request.query_params.get('page', None))
             queryset = Post.objects.filter(author=self.request.user)
-            paginator = Paginator(queryset, 9)
-            posts = paginator.page(page)
+            querySize = int(page) * 2
+            count = 1
+            size = 0
+            paginator = Paginator(queryset, 3)
+            while size < querySize:
+                posts = paginator.page(count)
+                res = []
+                for post in posts:
+                    comment = Comment.objects.filter(post=post.id).exclude(author=request.user)
+                    if comment.last():
+                        nested = {}
+                        nested["postID"] = "c" + str(post.id)
+                        nested["personID"] = comment.last().author.id
+                        nested["personUsername"] = comment.last().author.username
+                        nested["PostImgUrl"] = str(post.post_pics)
+                        nested["count"] = comment.count() - 1
+                        nested["date"] = comment.last().created_date
+                        res.append(nested)
 
-            # response = {post.id: [Comment.objects.filter(post=post.id).last().author.id,
-            #                       Comment.objects.filter(post=post.id).last().author.username, str(post.post_pics),
-            #                       Comment.objects.filter(post=post.id).count() - 1] for post in posts if
-            #             Comment.objects.filter(post=post.id).last()}
-            #
-            # return JsonResponse(response, status=200, safe=True)
+                    like = Likes.objects.filter(post=post.id).exclude(person=request.user)
+                    if like.last():
+                        nested = {}
+                        nested["postID"] = "l" + str(post.id)
+                        nested["personID"] = like.last().person.id
+                        nested["personUsername"] = like.last().person.username
+                        nested["PostImgUrl"] = str(post.post_pics)
+                        nested["count"] = like.count() - 1
+                        nested["date"] = like.last().created_date
+                        res.append(nested)
 
-            res = []
-            for post in posts:
-                comment = Comment.objects.filter(post=post.id).exclude(author=request.user)
-                if comment.last():
-                    nested = {}
-                    nested["postID"] = "c" + str(post.id)
-                    nested["personID"] = comment.last().author.id
-                    nested["personUsername"] = comment.last().author.username
-                    nested["PostImgUrl"] = str(post.post_pics)
-                    nested["count"] = comment.count() - 1
-                    nested["date"] = comment.last().created_date
-                    res.append(nested)
+                    count = count + 1
 
             return JsonResponse(res, status=200, safe=False)
+
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+
+class LatestCommentsAndLikesPagination1(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, **kwargs):
+
+        try:
+
+            comment = CommentGetSerializer(Comment.objects.all().exclude(author=request.user).distinct('post'),
+                                           many=True)
+
+            return Response(comment.data, status=200)
 
 
         except Exception as e:

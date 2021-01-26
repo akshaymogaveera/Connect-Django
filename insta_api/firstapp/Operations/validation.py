@@ -58,7 +58,7 @@ class Registration:
         self.status = False
         self.user = None
         # data['password'] = make_password(data['password'])
-        print(data)
+        #print(data)
         userserializer = UserSerializer(data=data)
         if userserializer.is_valid():
             try:
@@ -193,8 +193,8 @@ class RegisterValidate(PayloadValidator):
         if not val.isalnum() or val.isdigit():
             errors.append("Username should be Alphanumeric")
             return False
-        elif len(val) < 4:
-            errors.append("Username length should be more than 4")
+        elif len(val) < 5:
+            errors.append("Username length should be more than 5")
             return False
         elif len(val) > 14:
             errors.append("Username length should be less than 10")
