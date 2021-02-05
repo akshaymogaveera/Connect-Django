@@ -37,7 +37,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
 class BasicPagination(PageNumberPagination):
-    page_size = 2
+    page_size = 4
 
 
 class CustomPagination(PageNumberPagination):
