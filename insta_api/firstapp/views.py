@@ -1452,6 +1452,7 @@ class LatestLikeOfPostPagination(APIView):
             for postId in likes:
                 post = posts.get(id=postId)
                 like = Likes.objects.filter(post=postId).exclude(person=request.user)
+                userInfo = UserProfileInfo.objects.get(user=like.last().person)
                 nested = {}
                 nested["postID"] = "l" + str(post.id)
                 nested["personID"] = like.last().person.id
@@ -1459,6 +1460,7 @@ class LatestLikeOfPostPagination(APIView):
                 nested["PostImgUrl"] = str(post.post_pics)
                 nested["count"] = like.count() - 1
                 nested["date"] = like.last().created_date
+                nested["ProfileImgUrl"] = str(userInfo.profile_pic)
                 res.append(nested)
 
             return JsonResponse(res, status=200, safe=False)
@@ -1525,6 +1527,7 @@ class LatestCommentsOfPostPagination(APIView, PaginationHandlerMixin):
             for postId in comments:
                 post = posts.get(id=postId)
                 comment = Comment.objects.filter(post=postId).exclude(author=request.user)
+                userInfo = UserProfileInfo.objects.get(user=comment.last().author)
                 nested = {}
                 nested["postID"] = "c" + str(post.id)
                 nested["personID"] = comment.last().author.id
@@ -1532,6 +1535,7 @@ class LatestCommentsOfPostPagination(APIView, PaginationHandlerMixin):
                 nested["PostImgUrl"] = str(post.post_pics)
                 nested["count"] = comment.count() - 1
                 nested["date"] = comment.last().created_date
+                nested["ProfileImgUrl"] = str(userInfo.profile_pic)
                 res.append(nested)
 
             return JsonResponse(res, status=200, safe=False)
