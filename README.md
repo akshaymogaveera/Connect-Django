@@ -7,5 +7,5 @@
     4) Your friends can interact with the posts by liking or commenting on it.
     5) Search your colleagues on this wonderful platform and add them to your friends.
     6) See the posts shared by your friends on the feed and also get notifications for all the interactions happening on your posts.
-    7) This code is used as the backend.
+    7) To use app you need to first setup the Django backend and connect with the Android app.
   
