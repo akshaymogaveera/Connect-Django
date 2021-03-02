@@ -12,7 +12,10 @@ class validateUser():
     @staticmethod
     def authenticateUser(username, password):
         if (username is not None and password is not None and len(username) > 4 and len(
-                password) > 4 and username.isalnum() and password.isalnum()):
+                password) > 4):
+            print("validateUser")
+            print(username)
+            print(password)
             user = authenticate(username=username, password=password)
             return user
         else:
