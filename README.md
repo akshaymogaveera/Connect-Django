@@ -12,5 +12,8 @@
     
 ### Django Backend
     1) Django restframework is used for REST API's.
-    1) JWT Authentication is used for REST API's
+    2) JWT Authentication is used for REST API's.
+    3) Django application is deployed on <a href="https://www.pythonanywhere.com/">pythonanywhere</a> (Cloud).
+   
+## Navigate to Android App <a href="https://github.com/akshay1997feb/Connect-Android">repo</a>
   
