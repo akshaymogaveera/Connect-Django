@@ -1,6 +1,9 @@
 # Connect
 ### Python + Django
-## Watch the <a href="https://photos.app.goo.gl/rQqGsjjTXUZ39oeK8">demo</a> of the Connect application!
+## Watch the demo of the Connect application! (Click on the image below)
+
+<a href="https://youtu.be/ljr4xq2ozOs" target="_blank"><img src="https://github.com/akshay1997feb/Connect-Android/blob/master/connect.jpeg" width="800"></a>
+
 ### Overview
    1) Connect is a simple social networking application with no ads and is completely secure.
    2) Users can register and get started in few minutes. 
